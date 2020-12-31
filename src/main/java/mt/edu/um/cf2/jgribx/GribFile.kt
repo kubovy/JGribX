@@ -38,7 +38,7 @@ import kotlin.math.abs
  * @throws NotSupportedException if file contains features not yet supported
  * @throws NoValidGribException  if stream does not contain a valid GRIB file
  */
-class GribFile(gribInputStream: GribInputStream) {
+class GribFile(gribInputStream: GribInputStream, parameterCodes: List<String>? = null) {
 	/** Returns the GRIB filename. */
 	private var filename: String? = null
 
@@ -105,7 +105,9 @@ class GribFile(gribInputStream: GribInputStream) {
 	 * @throws NotSupportedException if file contains features not yet supported
 	 * @throws NoValidGribException  if file is no valid GRIB file
 	 */
-	constructor(filename: String, onRead: (Long) -> Unit = {}) : this(FileInputStream(filename), onRead) {
+	constructor(filename: String,
+				parameterCodes: List<String>? = null,
+				onRead: (Long) -> Unit = {}) : this(FileInputStream(filename), parameterCodes, onRead) {
 		this.filename = filename
 	}
 
@@ -119,8 +121,8 @@ class GribFile(gribInputStream: GribInputStream) {
 	 * @throws NotSupportedException if file contains features not yet supported
 	 * @throws NoValidGribException  if stream does not contain a valid GRIB file
 	 */
-	constructor(inputStream: InputStream, onRead: (Long) -> Unit = {}) :
-			this(GribInputStream(BufferedInputStream(inputStream), onRead))
+	constructor(inputStream: InputStream, parameterCodes: List<String>? = null, onRead: (Long) -> Unit = {}) :
+			this(GribInputStream(BufferedInputStream(inputStream), onRead), parameterCodes)
 
 	init {
 		// Initialise fields
@@ -133,12 +135,15 @@ class GribFile(gribInputStream: GribInputStream) {
 		while (gribInputStream.available() > 0) {
 			count++
 			try {
-				val record = GribRecord.readFromStream(gribInputStream)
+				val record = GribRecord.readFromStream(gribInputStream, parameterCodes)
 				Logger.info("GRIB Record $count")
 				Logger.info("\tReference Time: ${record.referenceTime.time}")
 				Logger.info("\tParameter: ${record.parameterCode} (${record.parameterDescription})")
 				Logger.info("\tLevel: ${record.levelCode} (${record.levelDescription})")
 				recordsInternal.add(record)
+			} catch (e: SkippedException) {
+				Logger.info("Skipping GRIB record ${count} (${e.message})")
+				recordsSkippedCount++
 			} catch (e: NotSupportedException) {
 				Logger.warning("Skipping GRIB record ${count} (${e.message})", e)
 				recordsSkippedCount++

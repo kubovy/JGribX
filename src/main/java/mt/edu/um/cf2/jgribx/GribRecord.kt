@@ -16,12 +16,12 @@ import java.util.*
 
 abstract class GribRecord(val indicatorSection: GribRecordIS) {
 	companion object {
-		internal fun readFromStream(gribInputStream: GribInputStream): GribRecord {
+		internal fun readFromStream(gribInputStream: GribInputStream, parameterCodes: List<String>?): GribRecord {
 			val (indicatorSection, discipline) = GribRecordIS.readFromStream(gribInputStream)
 			val record = when (indicatorSection.gribEdition) {
-				1 -> Grib1Record.readFromStream(gribInputStream, indicatorSection)
+				1 -> Grib1Record.readFromStream(gribInputStream, indicatorSection, parameterCodes)
 				2 -> if (discipline != null) Grib2Record
-						.readFromStream(gribInputStream, indicatorSection, discipline) else
+						.readFromStream(gribInputStream, indicatorSection, discipline, parameterCodes) else
 					throw NoValidGribException("Missing discipline for GRIB2 edition")
 				else -> throw NoValidGribException("Unsupported GRIB edition ${indicatorSection.gribEdition}")
 			}

@@ -15,6 +15,7 @@ import mt.edu.um.cf2.jgribx.GribRecord
 import mt.edu.um.cf2.jgribx.GribRecordIS
 import mt.edu.um.cf2.jgribx.Logger
 import mt.edu.um.cf2.jgribx.NoValidGribException
+import mt.edu.um.cf2.jgribx.SkippedException
 import mt.edu.um.cf2.jgribx.grib2.Grib2RecordDS.Companion.readFromStream
 import java.util.*
 import kotlin.math.roundToInt
@@ -34,8 +35,8 @@ class Grib2Record(indicatorSection: GribRecordIS,
 	companion object {
 		fun readFromStream(gribInputStream: GribInputStream,
 						   indicatorSection: GribRecordIS,
-						   discipline: ProductDiscipline): Grib2Record {
-			//val record = Grib2Record()
+						   discipline: ProductDiscipline,
+						   parameterCodes: List<String>?): Grib2Record {
 			var recordLength = indicatorSection.recordLength - indicatorSection.length
 			var identificationSection: Grib2RecordIDS? = null
 			var dataRepresentationSection: Grib2RecordDRS? = null
@@ -63,13 +64,21 @@ class Grib2Record(indicatorSection: GribRecordIS,
 					2 -> gribInputStream.skip(sectionLength.toLong())
 					3 -> gridDefinitionSection = Grib2RecordGDS.readFromStream(gribInputStream)
 							.also { gridDefinitionSectionList.add(it) }
-					4 -> if (identificationSection != null)
-						Grib2RecordPDS(
+					4 -> if (identificationSection != null) {
+						val pds = Grib2RecordPDS(
 								gribInputStream,
 								discipline,
 								identificationSection.referenceTime)
-								.also { productDefinitionSectionList.add(it) } else
+
+						productDefinitionSectionList.add(pds)
+						if (parameterCodes != null && !parameterCodes.contains(pds.parameterAbbrev)) {
+							gribInputStream.skip(recordLength - sectionLength - 4)
+							throw SkippedException("Parameter: ${pds.parameter} filtered out")
+						}
+					} else {
+						gribInputStream.skip(recordLength - 4)
 						throw NoValidGribException("Missing IDS section")
+					}
 					5 -> dataRepresentationSection = Grib2RecordDRS.readFromStream(gribInputStream)
 							?.also { dataRepresentationSectionList.add(it) }
 					6 -> bitmapSection = Grib2RecordBMS.readFromStream(gribInputStream)
@@ -83,7 +92,10 @@ class Grib2Record(indicatorSection: GribRecordIS,
 								gridDefinitionSection,
 								bitmapSection)
 								?.also { dataSectionList.add(it) }
-					else -> throw NoValidGribException("Invalid section ${section} encountered")
+					else -> {
+						gribInputStream.skip(recordLength - 4)
+						throw NoValidGribException("Invalid section ${section} encountered")
+					}
 				}
 				if (gribInputStream.byteCounter != sectionLength) Logger.error(
 						"Length of Section ${section} does not match actual amount of bytes read")

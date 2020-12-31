@@ -16,6 +16,7 @@ import mt.edu.um.cf2.jgribx.GribRecordIS
 import mt.edu.um.cf2.jgribx.Logger
 import mt.edu.um.cf2.jgribx.NoValidGribException
 import mt.edu.um.cf2.jgribx.NotSupportedException
+import mt.edu.um.cf2.jgribx.SkippedException
 import java.io.IOException
 import java.util.*
 import kotlin.math.roundToInt
@@ -51,11 +52,22 @@ class Grib1Record private constructor(indicatorSection: GribRecordIS,
 		 * @throws NoValidGribException  if stream contains no valid GRIB file
 		 */
 		internal fun readFromStream(gribInputStream: GribInputStream,
-									indicatorSection: GribRecordIS): Grib1Record {
+									indicatorSection: GribRecordIS,
+									parameterCodes: List<String>?): Grib1Record {
 			gribInputStream.resetBitCounter()
 			val productDefinitionSection = Grib1RecordPDS(gribInputStream)
 			if (gribInputStream.byteCounter != productDefinitionSection.length)
 				throw NoValidGribException("Incorrect PDS length")
+
+			if (parameterCodes != null && !parameterCodes.contains(productDefinitionSection.parameter.abbreviation)) {
+				if (productDefinitionSection.gdsExists) gribInputStream.skip(gribInputStream.readUINT(3) - 3L)
+				else throw NoValidGribException("GribRecord: No GDS included.")
+
+				if (productDefinitionSection.bmsExists) gribInputStream.skip(gribInputStream.readUINT(3) - 3L)
+				gribInputStream.skip(gribInputStream.readUINT(3) - 3L) // BDS
+
+				throw SkippedException("Parameter: ${productDefinitionSection.parameter} filtered out")
+			}
 
 			val gridDefinitionSection = if (productDefinitionSection.gdsExists) {
 				gribInputStream.resetBitCounter()
