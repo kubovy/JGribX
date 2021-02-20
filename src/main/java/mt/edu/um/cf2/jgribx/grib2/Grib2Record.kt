@@ -16,12 +16,10 @@ import mt.edu.um.cf2.jgribx.GribRecordIS
 import mt.edu.um.cf2.jgribx.Logger
 import mt.edu.um.cf2.jgribx.NoValidGribException
 import mt.edu.um.cf2.jgribx.SkippedException
-import mt.edu.um.cf2.jgribx.grib2.Grib2RecordDS.Companion.readFromStream
 import java.util.*
 import kotlin.math.roundToInt
 
 /**
- *
  * @author AVLAB-USER3
  */
 class Grib2Record(indicatorSection: GribRecordIS,
@@ -85,14 +83,14 @@ class Grib2Record(indicatorSection: GribRecordIS,
 							?.also { bitmapSectionList.add(it) }
 					7 -> if (dataRepresentationSection != null
 							&& gridDefinitionSection != null
-							&& bitmapSection != null)
-						readFromStream(
+							&& bitmapSection != null) {
+						Grib2RecordDS.readFromStream(
 								gribInputStream,
 								dataRepresentationSection,
 								gridDefinitionSection,
 								bitmapSection)
 								?.also { dataSectionList.add(it) }
-					else -> {
+					} else -> {
 						gribInputStream.skip(recordLength - 4)
 						throw NoValidGribException("Invalid section ${section} encountered")
 					}
