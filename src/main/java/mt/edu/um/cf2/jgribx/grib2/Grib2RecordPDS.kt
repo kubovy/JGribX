@@ -111,9 +111,9 @@ class Grib2RecordPDS(gribInputStream: GribInputStream, discipline: ProductDiscip
 				if (!Grib2Parameter.isDefaultLoaded) Grib2Parameter.loadDefaultParameters()
 				parameter = Grib2Parameter.getParameter(discipline, paramCategory, paramNumber)
 				if (parameter == null) {
-					//Logger.error("Unsupported parameter: D:${discipline} C:${paramCategory} N:${paramNumber}")
+					Logger.error("Unsupported parameter: D:${discipline} C:${paramCategory} N:${paramNumber}")
 					//gribInputStream.skip(23)
-					throw NotSupportedException("Unsupported parameter: D:${discipline} C:${paramCategory} N:${paramNumber}")
+					//throw NotSupportedException("Unsupported parameter: D:${discipline} C:${paramCategory} N:${paramNumber}")
 				}
 
 				/* [12] Type of generating process */
@@ -176,8 +176,8 @@ class Grib2RecordPDS(gribInputStream: GribInputStream, discipline: ProductDiscip
 				//val level2Value = level2ScaledValue / 10.0.pow(level2ScaleFactor.toDouble()).toFloat()
 				level = Grib2Level.getLevel(level1Type, level1Value)
 				if (level == null) {
-					//Logger.error("Unsupported level of type ${level1Type}")
-					throw NotSupportedException("Unsupported level of type ${level1Type}")
+					Logger.error("Unsupported level of type ${level1Type}")
+					//throw NotSupportedException("Unsupported level of type ${level1Type}")
 				}
 				if (level2Type != 255) Logger.error("Second surface is not yet supported")
 			}
