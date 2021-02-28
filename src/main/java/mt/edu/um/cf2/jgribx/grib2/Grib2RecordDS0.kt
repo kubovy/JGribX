@@ -2,6 +2,7 @@ package mt.edu.um.cf2.jgribx.grib2
 
 import mt.edu.um.cf2.jgribx.GribInputStream
 import mt.edu.um.cf2.jgribx.GribOutputStream
+import mt.edu.um.cf2.jgribx.TransformationException
 import kotlin.math.pow
 
 /**
@@ -45,6 +46,13 @@ class Grib2RecordDS0 internal constructor(gds: Grib2RecordGDS,
 			gribInputStream.seekNextByte()
 
 			return Grib2RecordDS0(gds, drs, bms, data)
+		}
+
+		internal fun convertFrom(ds: Grib2RecordDS<*>): Grib2RecordDS0 {
+			if (ds is Grib2RecordDS0) return ds
+			val drs = (ds.drs as? Grib2RecordDRS0)?.let { Grib2RecordDRS0(it) } // Re-instantiate
+					?: throw TransformationException("Can't convert ${ds.drs::class.simpleName} to Grib2RecordDS0")
+			return Grib2RecordDS0(ds.gds, drs, ds.bms, ds.data)
 		}
 	}
 

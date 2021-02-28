@@ -70,6 +70,9 @@ open class Grib2RecordDRS0 internal constructor(nDataPoints: Int,
 
 	override val templateNumber: Int = 0
 
+	internal constructor(drs: Grib2RecordDRS0) :
+			this(drs.nDataPoints, drs.refValue, drs.binaryScaleFactor, drs.decimalScaleFactor, drs.nBits, drs.type)
+
 	override fun writeTo(outputStream: GribOutputStream) {
 		super.writeTo(outputStream) // [1-5] length, section number, [6-11] DRS common stuff
 		outputStream.writeFloatIEEE754(refValue, bytes = 4) // [12-15]

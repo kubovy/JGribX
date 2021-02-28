@@ -60,7 +60,7 @@ abstract class Grib2RecordDS<DRS : Grib2RecordDRS> internal constructor(internal
 
 	override val number: Int = 7
 
-	protected var data: FloatArray = data
+	internal var data: FloatArray = data
 		private set
 
 	/**
